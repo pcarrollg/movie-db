@@ -1,0 +1,75 @@
+#Program to pull movie data from themoviedb
+#Pat Carroll 
+#CSE 6242 Homework 1 Question 1b
+
+import codecs
+import re
+import urllib2
+import json
+import time
+import sys
+import jsondate as json
+reload(sys) 
+sys.setdefaultencoding( "utf-8" )
+
+open('movie_ID_name.txt', 'w').close()
+
+#User inputs query and api key
+api_key = '96555ebfd4f2d41ea630eb9a974a7109'
+query = 'life'
+
+page = 1
+movies = []
+count = 0
+id = []
+movie_id_same = []
+
+#Below creates a text file with the first 300 movies that contain the 
+#query in the title. An array for the 300 movie ID's is created (id)	
+while count < 300:
+	url = 'http://api.themoviedb.org/3/search/movie?api_key=' + api_key
+	final_url = url + "&query=" + query + "&page=" + str(page)
+	json_obj = urllib2.urlopen(final_url)
+	data = json.load(json_obj)
+	for item in data['results']:
+		movie_id = item['id']
+		movie_id_same.append(movie_id)
+		movie_name = item['title'].encode('utf-8').strip('')
+		movies = movie_id, movie_name
+		with open('movie_ID_name.txt', 'a') as file:
+			file.write("<" + str(movies).strip('()') + ">" + '\n')
+	with open('movie_ID_name.txt') as myfile:
+		count = sum(1 for line in myfile)
+	page = page + 1
+	time.sleep(1.0)
+
+	
+similar_movies = []
+count2 = 0
+for i in movie_id_same:
+	url = 'http://api.themoviedb.org/3/movie/' + str(i).strip('[]') + '/similar?api_key=' + api_key
+	json_obj = urllib2.urlopen(url)
+	data = json.load(json_obj)
+
+	for item in data['results'][:5]:
+		similar_mov = item['id']
+		if int(i) > int(similar_mov):
+			same = similar_mov, i
+			similar_movies.append(same)
+		else:
+			same =  i, similar_mov
+			similar_movies.append(same)
+	time.sleep(1.0)
+
+
+duplicate = set()
+unique = []
+for j in similar_movies:
+	if j not in duplicate:
+		unique.append(j)
+		duplicate.add(j)
+
+	
+with open('movie_ID_sim_movie_ID.txt', 'a') as myfile:
+	for i in unique:
+		myfile.write("<" + str(i).strip('()') + ">" + '\n')
